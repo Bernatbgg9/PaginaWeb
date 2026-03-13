@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Panel Admin - Productos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 0 15px;
+      background: #f9f9f9;
+    }
+    h1 {
+      text-align: center;
+      color: #222;
+    }
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px #ddd;
+      margin-bottom: 35px;
+    }
+    form label {
+      display: block;
+      font-weight: bold;
+      margin: 10px 0 6px;
+    }
+    form input, form textarea {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    form textarea {
+      resize: vertical;
+    }
+    form button {
+      margin-top: 15px;
+      padding: 12px 20px;
+      font-size: 16px;
+      background: #007bff;
+      border: none;
+      border-radius: 7px;
+      color: white;
+      cursor: pointer;
+    }
+    form button:hover {
+      background: #0056b3;
+    }
+    ul.products {
+      list-style: none;
+      padding: 0;
+    }
+    ul.products li {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 8px #ccc;
+      margin-bottom: 15px;
+      padding: 15px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    ul.products img {
+      width: 90px;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+    ul.products .info {
+      flex-grow: 1;
+    }
+    ul.products .info h3 {
+      margin: 0 0 7px 0;
+    }
+    ul.products .info p {
+      margin: 0 0 10px 0;
+      color: #555;
+      font-size: 14px;
+    }
+    ul.products .info .price-stock {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    ul.products .info button {
+      margin-right: 10px;
+      padding: 7px 15px;
+      font-size: 14px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+    }
+    ul.products .info button.edit-btn {
+      background-color: #ffc107;
+      color: #000;
+    }
+    ul.products .info button.edit-btn:hover {
+      background-color: #e0a800;
+    }
+    ul.products .info button.delete-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+    ul.products .info button.delete-btn:hover {
+      background-color: #b52a3a;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Panel de Administración de Productos</h1>
+
+<form id="productForm" enctype="multipart/form-data">
+  <label for="name">Nombre</label>
+  <input type="text" id="name" name="name" required />
+
+  <label for="description">Descripción</label>
+  <textarea id="description" name="description" rows="3" required></textarea>
+
+  <label for="price">Precio (€)</label>
+  <input type="number" id="price" name="price" min="0" step="0.01" required />
+
+  <label for="image_url">URL de la imagen</label>
+  <input type="text" id="image_url" name="image_url" required />
+
+  <label for="stock">Stock</label>
+  <input type="number" id="stock" name="stock" min="0" required />
+
+  <label><input type="checkbox" id="is_pack" name="is_pack" /> Es un pack</label>
+
+  <div id="packSelection" style="display:none;">
+    <label for="pack_ids">Selecciona productos del pack:</label>
+    <div id="packCheckboxes"></div>
+  </div>
+
+  <label for="pdf">Archivo PDF (opcional)</label>
+  <input type="file" id="pdf" name="pdf" accept=".pdf" />
+
+  <button type="submit">Añadir Producto</button>
+</form>
+
+<ul class="products" id="productsList"></ul>
+
+<script>
+  let editingId = null;
+  let allProducts = [];
+
+  document.getElementById("is_pack").addEventListener("change", (e) => {
+    document.getElementById("packSelection").style.display = e.target.checked ? "block" : "none";
+  });
+
+  async function loadProducts() {
+    const res = await fetch("/products/");
+    if (!res.ok) return alert("Error al cargar productos");
+    const products = await res.json();
+    allProducts = products;
+    renderProductList(products);
+    renderPackCheckboxes(products);
+  }
+
+  function renderPackCheckboxes(products) {
+    const container = document.getElementById("packCheckboxes");
+    container.innerHTML = "";
+    for (const p of products) {
+      if (!p.is_pack) {
+        const box = document.createElement("div");
+        box.innerHTML = `<label><input type="checkbox" value="${p.id}" name="pack_ids" /> ${p.name}</label>`;
+        container.appendChild(box);
+      }
+    }
+  }
+
+  function renderProductList(products) {
+    const list = document.getElementById("productsList");
+    list.innerHTML = "";
+    for (const p of products) {
+      const li = document.createElement("li");
+      const packInfo = p.is_pack ? `<strong>Pack</strong><br/>Incluye IDs: [${p.pack_ids?.join(", ")}]<br/>` : "";
+      li.innerHTML = `
+        <img src="${p.image_url}" alt="${p.name}" />
+        <div class="info">
+          <h3>${p.name}</h3>
+          <p>${p.description}</p>
+          <div class="price-stock">${p.price.toFixed(2)} € | Stock: ${p.stock}</div>
+          <p>${packInfo}</p>
+          <button class="edit-btn" data-id="${p.id}">Editar</button>
+          <button class="delete-btn" data-id="${p.id}">Borrar</button>
+        </div>
+      `;
+      list.appendChild(li);
+    }
+  }
+
+  document.getElementById("productsList").addEventListener("click", async e => {
+    if (e.target.classList.contains("delete-btn")) {
+      const id = e.target.dataset.id;
+      if (confirm("¿Seguro que quieres borrar este producto?")) {
+        const res = await fetch(`/products/${id}`, { method: "DELETE" });
+        if (res.status === 204) {
+          alert("Producto borrado");
+          loadProducts();
+        } else {
+          alert("Error al borrar producto");
+        }
+      }
+    } else if (e.target.classList.contains("edit-btn")) {
+      const id = e.target.dataset.id;
+      const res = await fetch(`/products/${id}`);
+      if (res.ok) {
+        const p = await res.json();
+        const form = document.getElementById("productForm");
+        form.name.value = p.name;
+        form.description.value = p.description;
+        form.price.value = p.price;
+        form.image_url.value = p.image_url;
+        form.stock.value = p.stock;
+        document.getElementById("is_pack").checked = p.is_pack;
+        document.getElementById("packSelection").style.display = p.is_pack ? "block" : "none";
+        document.querySelectorAll("#packCheckboxes input[type=checkbox]").forEach(chk => {
+          chk.checked = p.pack_ids?.includes(parseInt(chk.value));
+        });
+        editingId = id;
+        form.querySelector("button[type=submit]").textContent = "Actualizar Producto";
+      }
+    }
+  });
+
+  document.getElementById("productForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+
+    const selectedPackIds = Array.from(document.querySelectorAll('input[name="pack_ids"]:checked')).map(el => parseInt(el.value));
+    formData.set("pack_ids", JSON.stringify(selectedPackIds));
+    formData.set("is_pack", document.getElementById("is_pack").checked);
+
+    let url = "/products/";
+    let method = "POST";
+    if (editingId) {
+      url = `/products/${editingId}`;
+      method = "PUT";
+    }
+
+    const res = await fetch(url, { method, body: formData });
+
+    if (res.ok) {
+      alert(editingId ? "Producto actualizado" : "Producto añadido");
+      form.reset();
+      editingId = null;
+      form.querySelector("button[type=submit]").textContent = "Añadir Producto";
+      document.getElementById("packSelection").style.display = "none";
+      loadProducts();
+    } else {
+      alert("Error guardando producto");
+    }
+  });
+
+  loadProducts();
+</script>

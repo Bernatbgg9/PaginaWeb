@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Finalizar compra</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 25px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #222;
+      margin-bottom: 25px;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 25px;
+    }
+
+    li {
+      padding: 12px 14px;
+      background: #f9f9f9;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      font-size: 15px;
+      color: #333;
+    }
+
+    input[type="email"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+      margin-bottom: 25px;
+    }
+
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    button {
+      padding: 12px;
+      font-size: 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .back-button {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .back-button:hover {
+      background-color: #0056b3;
+    }
+
+    .confirm-button {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .confirm-button:hover {
+      background-color: #1e7e34;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        margin: 20px;
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+
+      li {
+        font-size: 14px;
+      }
+
+      input[type="email"] {
+        font-size: 14px;
+      }
+
+      button {
+        font-size: 14px;
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Finalizar Compra</h1>
+
+    <ul id="cart-summary"></ul>
+
+    <input type="email" id="email" placeholder="Introduce tu correo electrónico" required />
+
+    <div class="buttons">
+      <button class="back-button" onclick="goBack()">Volver a la tienda</button>
+      <button class="confirm-button" onclick="checkout()">Confirmar pedido</button>
+    </div>
+  </div>
+
+  <script>
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    const list = document.getElementById("cart-summary");
+
+    if (cart.length === 0) {
+      list.innerHTML = "<li>Tu carrito está vacío</li>";
+    } else {
+      cart.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = `${item.name} - ${item.price.toFixed(2)} €`;
+        list.appendChild(li);
+      });
+    }
+
+    function goBack() {
+      localStorage.setItem("cart", JSON.stringify(cart));
+      window.location.href = "/tienda"; // <-- CAMBIADO
+    }
+
+    async function checkout() {
+      const email = document.getElementById("email").value;
+      if (!email || !email.includes("@")) {
+        alert("Introduce un correo válido");
+        return;
+      }
+
+      const res = await fetch("/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, cart })
+      });
+
+      if (res.ok) {
+        alert("¡Pedido realizado con éxito! Revisa tu correo.");
+        localStorage.removeItem("cart");
+        window.location.href = "/tienda"; // También puedes mandarlo a "/gracias" si quieres
+      } else {
+        alert("Error al procesar el pedido.");
+      }
+    }
+  </script>
+</body>
+</html>

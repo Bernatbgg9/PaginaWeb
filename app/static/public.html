@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tienda Pública</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: white;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px 25px;
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    nav {
+      display: flex;
+      gap: 20px;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: #555;
+      font-weight: 500;
+    }
+
+    nav a:hover {
+      color: #007bff;
+    }
+
+    .hamburger {
+      display: none;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px 10px;
+    }
+
+    @media (max-width: 768px) {
+      nav {
+        display: none;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        background-color: white;
+        width: 100%;
+        flex-direction: column;
+        padding: 10px 0;
+        z-index: 9999;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      }
+
+      nav.show {
+        display: flex;
+      }
+
+      .hamburger {
+        display: block;
+      }
+    }
+
+    #cart-icon {
+      cursor: pointer;
+      background: #fdfdfd;
+      padding: 8px 12px;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      font-size: 18px;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+      padding: 30px 15px;
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    .product-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.2s ease;
+    }
+
+    .product-card:hover {
+      transform: scale(1.02);
+    }
+
+    .product-card img {
+      width: 100%;
+      height: 260px;
+      object-fit: cover;
+    }
+
+    .product-info {
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+
+    .product-info h3 {
+      font-size: 16px;
+      margin: 0 0 10px 0;
+      color: #222;
+      height: 42px;
+      overflow: hidden;
+    }
+
+    .product-info .price {
+      font-size: 16px;
+      font-weight: bold;
+      color: #c00;
+      margin-bottom: 8px;
+    }
+
+    .product-info .price del {
+      color: #888;
+      margin-right: 6px;
+      font-weight: normal;
+    }
+
+    .shipping-label {
+      font-size: 13px;
+      color: #008000;
+      font-weight: bold;
+    }
+
+    .product-info button {
+      margin-top: auto;
+      margin-top: 15px;
+      padding: 8px 12px;
+      border: none;
+      background: #28a745;
+      color: white;
+      font-size: 14px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .product-info button:hover {
+      background: #1e7e34;
+    }
+
+    #cart-dropdown {
+      position: fixed;
+      top: 60px;
+      right: 30px;
+      width: 270px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #aaa;
+      padding: 10px;
+      display: none;
+      z-index: 999;
+    }
+
+    #cart-dropdown ul {
+      list-style: none;
+      padding: 0;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    #cart-dropdown li {
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    #cart-dropdown button {
+      margin-left: 5px;
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 3px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #cart-dropdown .finalizar-compra {
+      margin-top: 10px;
+      display: block;
+      width: 100%;
+      padding: 10px;
+      font-size: 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #cart-dropdown .finalizar-compra:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="hamburger" onclick="toggleMenu()">☰</div>
+    <nav id="main-menu">
+      <a href="/">Inicio</a>
+      <a href="/tienda">Catálogo</a>
+    </nav>
+  </div>
+
+  <div class="logo">Mi Tienda</div>
+
+  <div id="cart-icon" onclick="toggleCart()">
+    🛒 <span id="cart-count">0</span>
+  </div>
+</header>
+
+<div id="cart-dropdown">
+  <h3>Carrito</h3>
+  <ul id="cart-items"></ul>
+  <button class="finalizar-compra" onclick="goToShop()">Finalizar compra</button>
+</div>
+
+<div class="product-grid" id="productsList"></div>
+
+<script>
+  let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+  function toggleCart() {
+    const dropdown = document.getElementById("cart-dropdown");
+    dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+  }
+
+  function toggleMenu() {
+    document.getElementById("main-menu").classList.toggle("show");
+  }
+
+  function updateCartUI() {
+    const list = document.getElementById("cart-items");
+    const count = document.getElementById("cart-count");
+    list.innerHTML = '';
+    cart.forEach((item, index) => {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        ${item.name} (${item.price.toFixed(2)} €)
+        <button onclick="removeFromCart(${index})">X</button>
+      `;
+      list.appendChild(li);
+    });
+    count.innerText = cart.length;
+  }
+
+  async function addToCart(id) {
+    const res = await fetch(`/products/${id}/add_to_cart`, { method: 'POST' });
+    if (res.ok) {
+      const product = await fetch(`/products/${id}`).then(r => r.json());
+      cart.push(product);
+      localStorage.setItem("cart", JSON.stringify(cart));
+      updateCartUI();
+      loadProducts();
+    } else {
+      const err = await res.json();
+      alert('Error: ' + err.detail);
+    }
+  }
+
+  async function removeFromCart(index) {
+    const product = cart[index];
+    cart.splice(index, 1);
+    localStorage.setItem("cart", JSON.stringify(cart));
+    const res = await fetch(`/products/${product.id}/return_to_stock`, { method: 'POST' });
+    if (res.ok) {
+      updateCartUI();
+      loadProducts();
+    } else {
+      alert("Error al devolver el producto al stock");
+    }
+  }
+
+  function generateImageCollage(images) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const size = 260;
+    canvas.width = size;
+    canvas.height = size;
+
+    return new Promise(resolve => {
+      let loaded = 0;
+      const imgs = images.slice(0, 4).map(url => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = url;
+        return img;
+      });
+
+      imgs.forEach((img, index) => {
+        img.onload = () => {
+          loaded++;
+          if (loaded === imgs.length) {
+            ctx.clearRect(0, 0, size, size);
+            imgs.forEach((img, i) => {
+              const x = (i % 2) * size / 2;
+              const y = Math.floor(i / 2) * size / 2;
+              ctx.drawImage(img, x, y, size / 2, size / 2);
+            });
+            resolve(canvas.toDataURL());
+          }
+        };
+        img.onerror = () => loaded++;
+      });
+    });
+  }
+
+  async function loadProducts() {
+    const res = await fetch('/products/');
+    if (!res.ok) {
+      alert('Error al cargar productos');
+      return;
+    }
+
+    const products = await res.json();
+    const list = document.getElementById('productsList');
+    list.innerHTML = '';
+
+    for (const p of products) {
+      let imgSrc = p.image_url;
+      let priceHTML = `<span>${p.price.toFixed(2)} €</span>`;
+
+      if (p.subproducts && p.subproducts.length > 0) {
+        const original = p.subproducts.reduce((acc, sp) => acc + sp.price, 0);
+        priceHTML = `<del>${original.toFixed(2)} €</del> ${p.price.toFixed(2)} €`;
+
+        const imageUrls = p.subproducts.map(sp => sp.image_url);
+        imgSrc = await generateImageCollage(imageUrls);
+      }
+
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.innerHTML = `
+        <img src="${imgSrc}" alt="${p.name}" />
+        <div class="product-info">
+          <h3>${p.name}</h3>
+          <div class="price">${priceHTML}</div>
+          <div class="shipping-label">¡ENVÍO GRATIS!</div>
+          <button onclick="addToCart(${p.id})" ${p.stock <= 0 ? 'disabled' : ''}>
+            Añadir al carrito
+          </button>
+        </div>
+      `;
+      list.appendChild(card);
+    }
+  }
+
+  function goToShop() {
+    localStorage.setItem("cart", JSON.stringify(cart));
+    window.location.href = "/shop";
+  }
+
+  loadProducts();
+  updateCartUI();
+</script>
+
+</body>
+</html>
